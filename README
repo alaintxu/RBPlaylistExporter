@@ -22,8 +22,10 @@ INSTALL
 
 DEPENDENCIES
 
-  * rhythmbox >= 0.9.6
   * pygtk/gobject
+  * os
+  * urllib
+
 
 LICENSE
 
