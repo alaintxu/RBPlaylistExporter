@@ -6,6 +6,24 @@ Created on Dec 20, 2011
 '''
 import rb, rhythmdb
 import gobject, gtk
+
+
+ui_string = """
+<ui>
+  <menubar name="MenuBar"> 
+    <menu name="MusicMenu" action="Music"> 
+        <menu name="PlaylistMenu" action="Playlist">
+         <separator name="ExportPlaylistSeparator1"/>
+         <menuitem name="ExportPlaylistItem" action="ExportPlaylistGlobal"/>
+        </menu>
+    </menu>
+  </menubar>
+  <popup name="PlaylistSourcePopup">
+    <separator name="ExportPlaylistSeparator1"/>
+    <menuitem name="ExportPlaylistItem" action="ExportPlaylist"/>
+  </popup>
+</ui>"""
+
 class RBPlaylistExporter (rb.Plugin):
     def __init__(self):
         rb.Plugin.__init__(self)
@@ -25,21 +43,7 @@ class RBPlaylistExporter (rb.Plugin):
         self.action_group.add_action(self.global_action)
         
         ui_manager = shell.get_ui_manager ()
-        self.ui_id = ui_manager.add_ui_from_string("""
-            <ui>
-              <menubar name="MenuBar"> 
-                <menu name="MusicMenu" action="Music"> 
-                    <menu name="PlaylistMenu" action="Playlist">
-                     <separator name="ExportPlaylistSeparator1"/>
-                     <menuitem name="ExportPlaylistItem" action="ExportPlaylistGlobal"/>
-                    </menu>
-                </menu>
-              </menubar>
-              <popup name="PlaylistSourcePopup">
-                <separator name="ExportPlaylistSeparator1"/>
-                <menuitem name="ExportPlaylistItem" action="ExportPlaylist"/>
-              </popup>
-            </ui>""")
+        self.ui_id = ui_manager.add_ui_from_string(ui_string)
         ui_manager.insert_action_group(self.action_group)
         ui_manager.ensure_update()
         
