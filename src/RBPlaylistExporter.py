@@ -11,11 +11,11 @@ class RBPlaylistExporter (rb.Plugin):
         rb.Plugin.__init__(self)
     
     def activate(self,shell):
-        self.unique_action = gtk.Action('ExportPlaylist', _('Export Playlist to a folder'),
-                     _('Exports selected Playlist to a folder'),
+        self.unique_action = gtk.Action('ExportPlaylist', _('Export tracks'),
+                     _('Exports selected Playlist tracks into a folder'),
                      '')
-        self.global_action = gtk.Action('ExportPlaylistGlobal', _('Export any Playlist to a folder'),
-                     _('Exports any Playlist to a folder'),
+        self.global_action = gtk.Action('ExportPlaylistGlobal', _('Export tracks'),
+                     _('Exports all tracks of any Playlist into a folder'),
                      '')
         self.unique_activate_id = self.unique_action.connect('activate', self.export_playlist_unique, shell)
         self.global_activate_id = self.global_action.connect('activate', self.export_playlist_global, shell)

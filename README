@@ -1,0 +1,30 @@
+-------------------------------------------------------------------------------
+RBPlaylistExporter 0.1
+-------------------------------------------------------------------------------
+  Alain Perez Riaño <alain21p@hotmail.com>
+  http://alaintxu.blogspot.com
+
+DESCRIPTION
+
+  A plugin to export playlist into folders.
+
+INSTALL
+
+  Copy directory to:
+    * ~/.gnome2/rhythmbox/plugins/
+    -OR-
+    * $prefix/lib/rhythmbox/plugins/
+
+  So it looks like:
+    * ~/.gnome2/rhythmbox/plugins/RBPlaylistExporter
+	-OR-
+	* $prefix/lib/rhythmbox/plugins/RBPlaylistExporter
+
+DEPENDENCIES
+
+  * rhythmbox >= 0.9.6
+  * pygtk/gobject
+
+LICENSE
+
+  RBPlaylistExporter is distributed under the GPL Version 2.
