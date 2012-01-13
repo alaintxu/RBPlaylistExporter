@@ -1,0 +1,9 @@
+[RB Plugin]
+Loader=python
+Module=PlaylistExporter
+IAge=1
+Name=Playlist Exporter
+Description=Module that exports playlist to a folder
+Authors=Alain Perez <alain21p@hotmail.com>
+Copyright=PlaylistExporter is licensed under a Creative Commons Attribution-NonCommercial 3.0 Unported (CC BY-NC 3.0) 2012 Alain Perez
+Website=http://alaintxu.blogspot.com/
