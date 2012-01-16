@@ -56,6 +56,7 @@ class RBPlaylistExporter (rb.Plugin):
         print "Playlist Exporter activated!!!"
     def export_playlist_unique(self, action, shell):
         self.playlist = shell.get_property("selected_source")
+        self.proba()
         self.export_gtk_ui(shell)
     def export_playlist_global(self,action,shell):
         self.playlist = None
@@ -129,7 +130,7 @@ class RBPlaylistExporter (rb.Plugin):
             expath = self.expfcb.get_filename()
             if self.checkbox.get_active():
                 expath = expath+"/"+self.playlist_title
-                os.system("mkdir "+expath)
+                os.system("mkdir '"+expath+"'")
             self.export_playlist(shell, expath)
         else:
             print "Playlist couldn't be set"
@@ -137,7 +138,7 @@ class RBPlaylistExporter (rb.Plugin):
     def export_playlist(self,shell,expath):
         
         self.progressbar.set_fraction(0.0)
-        self.noftracks = 36
+        self.noftracks = len(list(self.playlist.props.query_model))
         self.zfill = len(str(self.noftracks))
         for treerow in self.playlist.props.base_query_model:
             entry, trackn = list(treerow)
@@ -188,8 +189,10 @@ class RBPlaylistExporter (rb.Plugin):
             print cpcommand
             os.system(cpcommand)
             
-    '''def proba(self,shell):
-        lista = list(shell.props)
+    def proba(self):
+        lista = list(self.playlist.props.query_model)
+        self.noftracks = len(lista)
+        print "noftracks: "+str(self.noftracks)
         i=0
         for x in lista:
             j=0
@@ -198,7 +201,7 @@ class RBPlaylistExporter (rb.Plugin):
                 print "Lista["+str(i)+"]["+str(j)+"]: "+y.__str__()
                 j=j+1
             i=i+1
-        '''
+        
         
     def deactivate(self,shell):
         uim = shell.get_ui_manager()
