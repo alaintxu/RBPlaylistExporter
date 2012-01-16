@@ -24,6 +24,10 @@ ui_string = """
     <separator name="ExportPlaylistSeparator1"/>
     <menuitem name="ExportPlaylistItem" action="ExportPlaylist"/>
   </popup>
+  <popup name="AutoPlaylistSourcePopup">
+    <separator name="ExportPlaylistSeparator1"/>
+    <menuitem name="ExportPlaylistItem" action="ExportPlaylist"/>
+  </popup>
 </ui>"""
 
 class RBPlaylistExporter (rb.Plugin):
@@ -51,15 +55,14 @@ class RBPlaylistExporter (rb.Plugin):
         
         print "Playlist Exporter activated!!!"
     def export_playlist_unique(self, action, shell):
-
-        playlist_source = shell.get_property("selected_source")
-        self.export_gtk_ui(shell, playlist_source)
-        '''export_url = "~/"
-        self.export_playlist(shell,playlist_source, export_url)'''
+        self.playlist = shell.get_property("selected_source")
+        self.export_gtk_ui(shell)
     def export_playlist_global(self,action,shell):
-        self.export_gtk_ui(shell,None)
+        self.playlist = None
+        self.export_gtk_ui(shell)
               
-    def export_gtk_ui(self,shell,playlist=None):
+    def export_gtk_ui(self,shell):
+        #self.proba(shell)
         window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         window.set_title("Playlist Exporter")
         window.set_default_size(512,215)
@@ -72,28 +75,20 @@ class RBPlaylistExporter (rb.Plugin):
         alignment.set_padding(5,5,15,15)
         window.add(alignment)
         
-        self.playlist_combo = gtk.Combo()
-        if(playlist!=None):
-            #Playlist as an argument
-            title = "Title"
-            window.set_title("Playlist Exporter: "+title)
-        else:
-            #Visual separator
-            hseparator0 = gtk.HSeparator()
-            vbox.add(hseparator0)
-            
-            #Playlist label
-            pllabel = gtk.Label("Playlist")
-            vbox.add(pllabel)
-            
-            slist = self.playlist_list(shell)
-            self.playlist_combo.set_popdown_strings(slist)
-            vbox.add(self.playlist_combo)
+        #Visual separator
+        hseparator0 = gtk.HSeparator()
+        vbox.add(hseparator0)
         
+        #Playlist label
+        pllabel = gtk.Label("Playlist")
+        vbox.add(pllabel)
         
-            #Visual separator
-            hseparator1 = gtk.HSeparator()
-            vbox.add(hseparator1)
+        self.playlist_combo = self.playlist_combobox(shell)
+        vbox.add(self.playlist_combo)
+    
+        #Visual separator
+        hseparator1 = gtk.HSeparator()
+        vbox.add(hseparator1)
         
         #Export folder label
         explabel = gtk.Label("Export folder")
@@ -116,7 +111,7 @@ class RBPlaylistExporter (rb.Plugin):
 
         #Button
         button = gtk.Button("Export files")
-        button.connect("clicked",self.export,shell,self.playlist_combo,playlist)
+        button.connect("clicked",self.export,shell,self.playlist_combo)
         button.set_size_request(150,30)
         
         #Progress Bar
@@ -129,24 +124,22 @@ class RBPlaylistExporter (rb.Plugin):
         
         window.show_all()
         self.window = window
-    def export(self,widget,shell,playlist_combo,playlist):
-        print "export function not implemented yet"
-        expath = self.expfcb.get_filename()
-        playlist_title = "Title"
-        if self.checkbox.get_active():
-            expath = expath+"/"+playlist_title
-        if playlist!=None:
-            self.export_playlist(shell,playlist, expath)
+    def export(self,widget,shell,playlist_combo):
+        if self.playlist_set_playlist(shell, self.playlist_combo.get_active()):
+            expath = self.expfcb.get_filename()
+            if self.checkbox.get_active():
+                expath = expath+"/"+self.playlist_title
+                os.system("mkdir "+expath)
+            self.export_playlist(shell, expath)
+        else:
+            print "Playlist couldn't be set"
         
-    def export_playlist(self,shell,playlist_source,expath):
+    def export_playlist(self,shell,expath):
         
-        print "Function export_playlist not implemented yet"
-        #playlist_list = list(playlist_source.props.base_query_model)
-        #self.noftracks = list.count(playlist_list)#Ez dabil
         self.progressbar.set_fraction(0.0)
         self.noftracks = 36
         self.zfill = len(str(self.noftracks))
-        for treerow in playlist_source.props.base_query_model:
+        for treerow in self.playlist.props.base_query_model:
             entry, trackn = list(treerow)
             uri = urllib.unquote(entry.get_playback_uri())
             uri = uri.replace("file://",'')
@@ -155,11 +148,35 @@ class RBPlaylistExporter (rb.Plugin):
         self.window.destroy()
               
     
-    def playlist_list(self,shell):
-        print "playlist_list function not implemented yet"
-        slist = [ "India","London","Singapore","China","Japan",
-                        "France","germany","canada","UnitedStates","Mexico","Sydney","Holland"]
-        return slist
+    def playlist_combobox(self,shell):
+        index = 0
+        i = 0
+        combobox = gtk.combo_box_new_text()
+        
+        playlist_model_entries = [x for x in list(shell.props.sourcelist.props.model) if list(x)[2] == "Playlists"]
+        if playlist_model_entries:
+            playlist_iter = playlist_model_entries[0].iterchildren()
+            for playlist_item in playlist_iter:
+                combobox.append_text(playlist_item[2])
+                if(playlist_item[3]==self.playlist):
+                    index = i
+                i=i+1
+        
+        combobox.set_active(index)
+        return combobox
+    
+    def playlist_set_playlist(self,shell,index):
+        i=0
+        playlist_model_entries = [x for x in list(shell.props.sourcelist.props.model) if list(x)[2] == "Playlists"]
+        if playlist_model_entries:
+            playlist_iter = playlist_model_entries[0].iterchildren()
+            for playlist_item in playlist_iter:
+                if i==index:
+                    self.playlist_title = playlist_item[2]
+                    self.playlist = playlist_item[3]
+                    return True
+                i=i+1
+        return False
     
     def copy_command(self,expath,trackn,uri,name):
             #Change progress bar
@@ -169,7 +186,19 @@ class RBPlaylistExporter (rb.Plugin):
                 gtk.main_iteration()
             cpcommand = 'cp "'+uri+'" "'+expath+'/'+str(trackn).zfill(self.zfill)+' - '+name+'.mp3"'
             print cpcommand
-            #os.system(cpcommand)
+            os.system(cpcommand)
+            
+    '''def proba(self,shell):
+        lista = list(shell.props)
+        i=0
+        for x in lista:
+            j=0
+            print "Lista["+str(i)+"]: "+x.__str__()
+            for y in x:
+                print "Lista["+str(i)+"]["+str(j)+"]: "+y.__str__()
+                j=j+1
+            i=i+1
+        '''
         
     def deactivate(self,shell):
         uim = shell.get_ui_manager()
