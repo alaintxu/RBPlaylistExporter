@@ -185,7 +185,10 @@ class RBPlaylistExporter (rb.Plugin):
             self.progressbar.set_fraction(float(trackn)/float(self.noftracks))
             while gtk.events_pending():
                 gtk.main_iteration()
-            cpcommand = 'cp "'+uri+'" "'+expath+'/'+str(trackn).zfill(self.zfill)+' - '+name+'.mp3"'
+                
+            ext = os.path.splitext(uri)[1]
+
+            cpcommand = 'cp "'+uri+'" "'+expath+'/'+str(trackn).zfill(self.zfill)+' - '+name+ext+'"'
             print cpcommand
             os.system(cpcommand)
             
