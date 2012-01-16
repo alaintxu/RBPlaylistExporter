@@ -34,6 +34,7 @@ class RBPlaylistExporter (rb.Plugin):
     def __init__(self):
         rb.Plugin.__init__(self)
     
+    # Executed when the module is activated
     def activate(self,shell):
         self.unique_action = gtk.Action('ExportPlaylist', _('Export tracks'),
                      _('Exports selected Playlist tracks into a folder'),
@@ -54,14 +55,18 @@ class RBPlaylistExporter (rb.Plugin):
         ui_manager.ensure_update()
         
         print "Playlist Exporter activated!!!"
+    
+    # Executed when playlist selected
     def export_playlist_unique(self, action, shell):
         self.playlist = shell.get_property("selected_source")
-        self.proba()
         self.export_gtk_ui(shell)
+        
+    # Executed when no playlist selected
     def export_playlist_global(self,action,shell):
         self.playlist = None
         self.export_gtk_ui(shell)
-              
+    
+    # Prepares the user interface for exporting
     def export_gtk_ui(self,shell):
         #self.proba(shell)
         window = gtk.Window(gtk.WINDOW_TOPLEVEL)
@@ -83,6 +88,12 @@ class RBPlaylistExporter (rb.Plugin):
         #Playlist label
         pllabel = gtk.Label("Playlist")
         vbox.add(pllabel)
+        
+        # All Playlist Checkbox
+        self.allcheckbox = gtk.CheckButton("Export all playlists (with subfolders)", use_underline=True)
+        self.allcheckbox.set_active(False) # Unchecked by default
+        self.allcheckbox.connect("clicked", self.allcheckbox_on_clicked)
+        vbox.add(self.allcheckbox)
         
         self.playlist_combo = self.playlist_combobox(shell)
         vbox.add(self.playlist_combo)
@@ -112,7 +123,7 @@ class RBPlaylistExporter (rb.Plugin):
 
         #Button
         button = gtk.Button("Export files")
-        button.connect("clicked",self.export,shell,self.playlist_combo)
+        button.connect("clicked",self.export,shell)
         button.set_size_request(150,30)
         
         #Progress Bar
@@ -125,16 +136,42 @@ class RBPlaylistExporter (rb.Plugin):
         
         window.show_all()
         self.window = window
-    def export(self,widget,shell,playlist_combo):
-        if self.playlist_set_playlist(shell, self.playlist_combo.get_active()):
-            expath = self.expfcb.get_filename()
-            if self.checkbox.get_active():
-                expath = expath+"/"+self.playlist_title
-                os.system("mkdir '"+expath+"'")
-            self.export_playlist(shell, expath)
-        else:
-            print "Playlist couldn't be set"
         
+    # Activate/deactivate widgets depending on allplaylist checkbox
+    def allcheckbox_on_clicked(self,widget):
+        if widget.get_active():
+            self.playlist_combo.set_sensitive(False)
+            self.checkbox.set_sensitive(False)
+        else:
+            self.playlist_combo.set_sensitive(True)
+            self.checkbox.set_sensitive(True)
+    
+    # main action when export options are selected
+    def export(self,widget,shell):
+        if self.checkbox.get_active():
+            self.export_all(shell,self.expfcb.get_filename())
+        else:
+            if self.playlist_set_playlist(shell, self.playlist_combo.get_active()):
+                expath = self.expfcb.get_filename()
+                if self.checkbox.get_active():
+                    expath = expath+"/"+self.playlist_title
+                    os.system("mkdir '"+expath+"'")
+                self.export_playlist(shell, expath)
+            else:
+                print "Playlist couldn't be set"
+    # Exports all playlists
+    def export_all(self,shell,expath):
+        playlist_model_entries = [x for x in list(shell.props.sourcelist.props.model) if list(x)[2] == "Playlists"]
+        if playlist_model_entries:
+            playlist_iter = playlist_model_entries[0].iterchildren()
+            for playlist_item in playlist_iter:
+                self.playlist_title = playlist_item[2]
+                self.playlist = playlist_item[3]
+                full_expath = expath+"/"+self.playlist_title
+                os.system("mkdir '"+full_expath+"'")
+                self.export_playlist(shell,full_expath)
+    
+    # Exports a single playlist
     def export_playlist(self,shell,expath):
         
         self.progressbar.set_fraction(0.0)
@@ -148,7 +185,7 @@ class RBPlaylistExporter (rb.Plugin):
             self.copy_command(expath,trackn, uri, title)
         self.window.destroy()
               
-    
+    # returns combobox with all posible playlist
     def playlist_combobox(self,shell):
         index = 0
         i = 0
@@ -166,6 +203,7 @@ class RBPlaylistExporter (rb.Plugin):
         combobox.set_active(index)
         return combobox
     
+    # Sets playlist and its title
     def playlist_set_playlist(self,shell,index):
         i=0
         playlist_model_entries = [x for x in list(shell.props.sourcelist.props.model) if list(x)[2] == "Playlists"]
@@ -179,6 +217,7 @@ class RBPlaylistExporter (rb.Plugin):
                 i=i+1
         return False
     
+    # Prepares and executes the copy command
     def copy_command(self,expath,trackn,uri,name):
             #Change progress bar
             self.progressbar.set_text(name+" ("+str(trackn)+" of "+str(self.noftracks)+")")
@@ -191,21 +230,8 @@ class RBPlaylistExporter (rb.Plugin):
             cpcommand = 'cp "'+uri+'" "'+expath+'/'+str(trackn).zfill(self.zfill)+' - '+name+ext+'"'
             print cpcommand
             os.system(cpcommand)
-            
-    def proba(self):
-        lista = list(self.playlist.props.query_model)
-        self.noftracks = len(lista)
-        print "noftracks: "+str(self.noftracks)
-        i=0
-        for x in lista:
-            j=0
-            print "Lista["+str(i)+"]: "+x.__str__()
-            for y in x:
-                print "Lista["+str(i)+"]["+str(j)+"]: "+y.__str__()
-                j=j+1
-            i=i+1
         
-        
+    # Deactivates the module
     def deactivate(self,shell):
         uim = shell.get_ui_manager()
         uim.remove_ui (self.ui_id)
